@@ -61,31 +61,35 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 <div class="grid">
  <div class="cd"><h3>Cán bộ đang có mặt <span id="pc"></span></h3><div id="plist"></div></div>
  <div class="cd"><h3>Hoạt động nổi bật</h3><div id="act"></div></div>
- <div class="cd"><h3>Mức độ có mặt theo bộ phận</h3><div id="dep"></div></div>
+ <div class="cd"><h3>Mức độ có mặt theo cấp</h3><div id="dep"></div></div>
  <div class="cd"><h3>Tiến độ hôm nay</h3><div class="row"><div class="don" id="don"><div><span><b id="pct">0%</b>chuyên cần</span></div></div><div id="leg" style="flex:1"></div></div></div>
 </div>
 <div id="modal"><form id="pf"><h3>Chào mừng cán bộ</h3>
  <label>Họ và tên</label><input id="pn" required placeholder="Nguyễn Văn A">
- <label>Bộ phận</label><select id="pd"></select>
- <label>Cấp</label><select id="pl"><option value="nv">Nhân viên</option><option value="qly">Quản lý</option></select>
+ <label>Cấp</label><select id="pl"><option value="nv">Nhân viên</option><option value="ql">Quản lý</option></select>
  <label>Mã PIN (nhân viên hoặc quản lý)</label><input id="pp" type="password" required placeholder="PIN">
  <label style="display:flex;gap:8px;align-items:flex-start;color:#cfd3ff"><input type="checkbox" id="pc2" required style="margin-top:3px">Tôi đồng ý cho hệ thống kiểm tra vị trí để xác nhận có mặt. Chỉ lưu trạng thái và giờ vào/ra, không lưu tọa độ.</label>
  <button class="btn" style="padding:11px">Bắt đầu</button></form></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script>
 /* ================= CẤU HÌNH ================= */
-const CFG={lat:10.899174659008123,lng:106.69777577115912,radius:120,maxAcc:250,late:'07:30',pins:{nv:'2026',qly:'8888'},staleMs:180000,beatMs:60000};
+const CFG={lat:10.899174659008123,lng:106.69777577115912,radius:120,maxAcc:250,late:'07:30',pins:{nv:'2026',ql:'8888'},staleMs:180000,beatMs:60000,
+ /* DÁN CẤU HÌNH FIREBASE VÀO ĐÂY (xem hướng dẫn). Để trống = chạy cục bộ, chưa realtime */
+ fb:{apiKey:'AIzaSyAQHKpqd_DWXCrOtpWfAUx6K1gr387USek',authDomain:'laithieu-c5e3b.firebaseapp.com',
+  /* Kiểm tra lại địa chỉ này ở trang Realtime Database (đầu trang); nếu khác thì sửa */
+  databaseURL:'https://laithieu-c5e3b-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId:'laithieu-c5e3b',appId:'1:130149669743:web:c86fb4a98ac24a01d8669a'}};
 const DEMO=new URLSearchParams(location.search).get('demo')==='1';
 /* Khu vực trên lưới 12x7 (x,y,rộng,cao). Phòng họp/Pantry là khu dùng chung */
 const ZONES=[
- {id:'ld',n:'Lãnh đạo',c:'#22d3ee',f:'#c9a574',x:0,y:0,w:3,h:3},
- {id:'vp',n:'Văn phòng',c:'#f472b6',f:'#b89a78',x:3,y:0,w:3,h:3},
- {id:'tck',n:'Tổ chức - Kiểm tra',c:'#34d399',f:'#9aa0bd',x:6,y:0,w:3,h:3},
- {id:'tgdv',n:'Tuyên giáo - Dân vận',c:'#fbbf24',f:'#c9a574',x:9,y:0,w:3,h:3},
+ {id:'ql',n:'Khu Quản lý',c:'#22d3ee',f:'#c9a574',x:0,y:0,w:4,h:3},
+ {id:'nv',n:'Khu Nhân viên',c:'#34d399',f:'#9aa0bd',x:4,y:0,w:8,h:3},
  {id:'hop',n:'Phòng họp',c:'#60a5fa',f:'#8f96b8',x:0,y:4,w:5,h:3},
- {id:'lt',n:'Sảnh tiếp dân',c:'#a78bfa',f:'#b89a78',x:5,y:4,w:2,h:3},
  {id:'pan',n:'Pantry',c:'#fb923c',f:'#9aa0bd',x:7,y:4,w:5,h:3}];
 const ZN=Object.fromEntries(ZONES.map(z=>[z.id,z]));
-const DEPTS=['ld','vp','tck','tgdv'];
+const DEPTS=['ql','nv'];
 const MW=12,MH=7;
 /* Dữ liệu mẫu (sẽ thay bằng Firebase ở giai đoạn 3) */
 const STAFF=[];
@@ -103,9 +107,10 @@ const SKIN=['#f1c9a5','#e0ac82','#c68a5e','#8d5a3b'],HAIR=['#1b1b1f','#3b2a1f','
 function look(seed){const r=rng(seed);const p=a=>a[Math.floor(r()*a.length)];return{skin:p(SKIN),hair:p(HAIR),shirt:p(SHIRT),style:Math.floor(r()*3),acc:Math.floor(r()*3)}}
 /* ================= DỮ LIỆU CÁN BỘ ================= */
 const seatN={};
-function seatOf(d){const i=(seatN[d]=(seatN[d]||0)+1)-1,z=ZN[d],k=i%4;return[z.x+.45+(k%2)*1.4+.45,z.y+.5+Math.floor(k/2)*1.3+.95]}
+const cols=z=>Math.floor(z.w/1.4);
+function seatOf(d){const z=ZN[d],nc=cols(z),used=new Set(people.filter(p=>p.dept===d&&present(p)).map(p=>p.seat[2]));let k=0;while(used.has(k)&&k<nc*2-1)k++;return[z.x+.4+(k%nc)*1.4+.45,z.y+.5+Math.floor(k/nc)*1.3+.95,k]}
 const people=[];
-function mk(id,name,level,dept,st,inAt,seat){const seed=hash(id+name);return{id,name,level,role:level==='qly'?'Quản lý':'Nhân viên',dept,st,inAt,seat,seed,L:look(seed),x:seat[0],y:seat[1],mode:'sit',t:Math.random()*8,path:[],dest:'seat',zone:dept}}
+function mk(id,name,level,dept,st,inAt,seat){const seed=hash(id+name);return{id,name,level,role:level==='ql'?'Quản lý':'Nhân viên',dept,st,inAt,seat,seed,L:look(seed),x:seat[0],y:seat[1],mode:'sit',t:Math.random()*8,path:[],dest:'seat',zone:dept}}
 const acts=[];
 const present=p=>p.st==='in'||p.st==='late';
 /* ================= CẢNH ISOMETRIC (Canvas 2D, nhẹ, không cần WebGL) ================= */
@@ -126,11 +131,11 @@ function disc(x,y,r,h,c,z0=0){const p=P(x,y,z0),q=P(x,y,z0+h);g.fillStyle=shade(
 function plant(x,y){box(x-.12,y-.12,.24,.24,.22,'#7a4b2a');const p=P(x,y,.75),r=.3*TW/2*Z;g.fillStyle='#16a34a';g.beginPath();g.arc(p[0],p[1],r,0,7);g.fill();g.fillStyle='#4ade80';g.beginPath();g.arc(p[0]-r*.3,p[1]-r*.3,r*.55,0,7);g.fill()}
 function items(){const L=[];const add=(x,y,f)=>{const r=rt(x,y);L.push({d:r[0]+r[1],f})};
  ZONES.forEach(z=>{
-  if(DEPTS.includes(z.id)){
-   for(let k=0;k<4;k++){const dx=z.x+.45+(k%2)*1.4,dy=z.y+.5+Math.floor(k/2)*1.3;
+  if(DEPTS.includes(z.id)){const nc=cols(z);
+   for(let k=0;k<nc*2;k++){const dx=z.x+.4+(k%nc)*1.4,dy=z.y+.5+Math.floor(k/nc)*1.3;
     add(dx+.45,dy+.3,()=>{box(dx,dy,.9,.6,.45,'#a9714b');box(dx+.3,dy+.15,.35,.08,.35,'#10142e',.45);const c=P(dx+.45,dy+.9,0);g.fillStyle='#2a2f5e';g.beginPath();g.arc(c[0],c[1]-6*Z,5*Z,0,7);g.fill()})}
    add(z.x+1.5,z.y+.12,()=>box(z.x+.3,z.y+.02,1.5,.22,1.1,'#5b3a29'));
-   add(z.x+2.8,z.y+2.8,()=>plant(z.x+2.8,z.y+2.8))}
+   add(z.x+z.w-.3,z.y+2.8,()=>plant(z.x+z.w-.3,z.y+2.8))}
   if(z.id==='hop'){add(2.5,5.5,()=>{disc(2.5,5.5,1.1,.1,'#3b3f9e');disc(2.5,5.5,.8,.4,'#a9714b')});for(let a=0;a<6;a++){const cx=2.5+Math.cos(a*1.047)*1.4,cy=5.5+Math.sin(a*1.047)*1.4;add(cx,cy,()=>box(cx-.15,cy-.15,.3,.3,.35,'#2a2f5e'))}}
   if(z.id==='pan'){add(9.5,4.2,()=>box(7.4,4.1,4.2,.5,.8,'#cbd5e1'));add(9.5,5.6,()=>{disc(9,5.6,.55,.5,'#e2e8f0');disc(10.8,5.8,.45,.5,'#fb923c')});add(11.6,6.5,()=>plant(11.6,6.5))}
   if(z.id==='lt'){add(5.8,5.5,()=>box(5.5,5.2,1,.5,.5,'#a78bfa'));add(5.3,6.6,()=>plant(5.3,6.6))}});
@@ -144,13 +149,13 @@ function person(p){const[sx,sy]=P(p.x,p.y);p.sx=sx;p.sy=sy;const s=Z*.95,sit=p.m
  const b=sy-(sit?2:0)*s;
  if(!sit){g.fillStyle='#1f2347';g.fillRect(sx-5*s+sw,b-10*s,4*s,10*s);g.fillRect(sx+1*s-sw,b-10*s,4*s,10*s)}
  const ty=b-(sit?6:10)*s-12*s;g.fillStyle=L.shirt;g.beginPath();g.roundRect(sx-6*s,ty,12*s,12*s,3*s);g.fill();
- if(p.dept==='ld'){g.fillStyle='#ef4444';g.fillRect(sx-1*s,ty+1*s,2*s,7*s)}
+ if(p.dept==='ql'){g.fillStyle='#ef4444';g.fillRect(sx-1*s,ty+1*s,2*s,7*s)}
  const hy=ty-5*s;g.fillStyle=L.skin;g.beginPath();g.arc(sx,hy,6*s,0,7);g.fill();
  g.fillStyle=L.hair;g.beginPath();g.arc(sx,hy-.5*s,6.3*s,Math.PI,0);g.fill();
  if(L.style==1){g.beginPath();g.arc(sx,hy-8*s,3*s,0,7);g.fill()}if(L.style==2)g.fillRect(sx-6.3*s,hy-1*s,2.5*s,8*s);
  if(L.acc==1){g.strokeStyle='#111';g.lineWidth=1.2*s;g.strokeRect(sx-4.5*s,hy-1.5*s,9*s,3*s)}
  if(p.me){g.strokeStyle='#22d3ee';g.lineWidth=2;g.beginPath();g.ellipse(sx,sy,13*s,6*s,0,0,7);g.stroke()}
- const nm=(p.level==='qly'?'★ ':'')+p.name.split(' ').slice(-1)[0];g.font=`600 ${Math.max(9,10*Z)}px 'Be Vietnam Pro'`;const w=g.measureText(nm).width+10;
+ const nm=(p.level==='ql'?'★ ':'')+p.name.split(' ').slice(-1)[0];g.font=`600 ${Math.max(9,10*Z)}px 'Be Vietnam Pro'`;const w=g.measureText(nm).width+10;
  g.fillStyle='#0a0d33dd';g.beginPath();g.roundRect(sx-w/2,hy-22*s,w,13*s,6);g.fill();g.fillStyle='#fff';g.textAlign='center';g.fillText(nm,sx,hy-12.5*s)}
 function labels(){g.textAlign='center';ZONES.forEach(z=>{const n=people.filter(p=>present(p)&&inZone(p,z)).length;const[x,y]=P(z.x+z.w/2,z.y+(DEPTS.includes(z.id)?.1:z.h-.1),1.9);
  const t=z.n+(n?' · '+n:'');g.font=`600 ${Math.max(10,12*Z)}px 'Be Vietnam Pro'`;const w=g.measureText(t).width+18,h=Math.max(20,22*Z);
@@ -184,7 +189,7 @@ $('#bPlay').onclick=e=>{playing=!playing;e.target.textContent=playing?'⏸':'▶
 let snd=false;$('#bSnd').onclick=e=>{snd=!snd;e.target.textContent=snd?'🔊':'🔇'};/* TODO: thêm âm thanh nền */
 $('#bFs').onclick=()=>{const s=document.querySelector('.sc');document.fullscreenElement?document.exitFullscreen():s.requestFullscreen?.()};
 function setFocus(id){focus=id;const z=id&&ZN[id];tcen=z?[z.x+z.w/2,z.y+z.h/2]:[6,3.5];tzm=z?2.2:1;document.querySelectorAll('#chips button').forEach(b=>b.classList.toggle('on',(b.dataset.z||'')===(id||'')))}
-const chipDef=[['','Toàn cảnh'],['ld','Lãnh đạo'],['vp','Văn phòng'],['tck','Tổ chức - Kiểm tra'],['tgdv','Tuyên giáo - Dân vận'],['hop','Phòng họp'],['pan','Pantry']];
+const chipDef=[['','Toàn cảnh'],['ql','Quản lý'],['nv','Nhân viên'],['hop','Phòng họp'],['pan','Pantry']];
 $('#chips').innerHTML=chipDef.map(c=>`<button data-z="${c[0]}" class="${c[0]?'':'on'}">${c[1]}</button>`).join('');
 $('#chips').onclick=e=>{if(e.target.dataset.z!==undefined)setFocus(e.target.dataset.z||null)};
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===b.dataset.v));render()});
@@ -200,23 +205,23 @@ function render(){
  $('#leg').innerHTML=Object.keys(ST).map(k=>`<div class="row"><span><i class="dot" style="background:${STC[k]}"></i>${ST[k]}</span><b style="margin-left:auto">${cnt[k]}</b></div>`).join('');
  $('#zg').innerHTML=ZONES.map(z=>{const a=people.filter(p=>present(p)&&inZone(p,z));return`<div class="cd" style="border-color:${z.c}88"><h3 style="color:${z.c}">${z.n}<span>${a.length} người</span></h3>${a.map(p=>`<div class="row">${p.name}</div>`).join('')||'<small>Trống</small>'}</div>`}).join('');
  renderMgr();$('#tl').innerHTML='<h3>Dòng thời gian hôm nay</h3>'+acts.map(a=>`<div class="row"><b style="color:var(--cy)">${a.t}</b><div>${a.tx}<small>${a.z}</small></div></div>`).join('')}
-function renderMgr(){if(!prof||prof.level!=='qly')return;
- $('#mg').innerHTML='<h3>Quản lý · danh sách hôm nay</h3>'+(people.map(p=>`<div class="row"><div class="av" style="background:${p.L.shirt}">${p.name.split(' ').pop()[0]}</div><div><b>${p.level==='qly'?'★ ':''}${p.name}</b><small>${p.role} · ${ZN[p.dept].n} · vào ${p.inAt||'-'}</small></div><span class="tag" style="color:${STC[p.st]}">${ST[p.st]}</span>${present(p)?`<button class="btn" data-out="${p.id}">Cho ra về</button>`:''}</div>`).join('')||'<small>Chưa có ai kết nối</small>')+'<div class="row"><button class="btn" data-csv="1">Xuất CSV hôm nay</button></div>'}
-$('#mg').onclick=e=>{const o=e.target.dataset.out;if(o){const p=people.find(x=>x.id===o);if(p){p.st='out';acts.unshift({t:hhmm(),tx:p.name+' được quản lý cho ra về',z:ZN[p.dept].n});render()}}
+function renderMgr(){if(!prof||prof.level!=='ql')return;
+ $('#mg').innerHTML='<h3>Quản lý · danh sách hôm nay</h3>'+(people.map(p=>`<div class="row"><div class="av" style="background:${p.L.shirt}">${p.name.split(' ').pop()[0]}</div><div><b>${p.level==='ql'?'★ ':''}${p.name}</b><small>${p.role} · ${ZN[p.dept].n} · vào ${p.inAt||'-'}</small></div><span class="tag" style="color:${STC[p.st]}">${ST[p.st]}</span>${present(p)?`<button class="btn" data-out="${p.id}">Cho ra về</button>`:''}</div>`).join('')||'<small>Chưa có ai kết nối</small>')+'<div class="row"><button class="btn" data-csv="1">Xuất CSV hôm nay</button></div>'}
+$('#mg').onclick=e=>{const o=e.target.dataset.out;if(o){const p=people.find(x=>x.id===o);if(p){p.st='out';if(online&&!p.me)db.ref('presence/'+p.id).update({status:'out',lastSeen:TS()}).catch(()=>alert('Không đủ quyền: hãy thêm UID của bạn vào mục admins trong Firebase.'));acts.unshift({t:hhmm(),tx:p.name+' được quản lý cho ra về',z:ZN[p.dept].n});render()}}
  if(e.target.dataset.csv){const r=['Họ tên,Cấp,Bộ phận,Trạng thái,Giờ vào'].concat(people.map(p=>[p.name,p.role,ZN[p.dept].n,ST[p.st],p.inAt].join(',')));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+r.join('\n')],{type:'text/csv'}));a.download='chuyen-can-'+new Date().toISOString().slice(0,10)+'.csv';a.click()}};
-function applyRole(){const m=prof&&prof.level==='qly';['tabMgr','tabTl'].forEach(i=>$('#'+i).style.display=m?'':'none');$('#bLogout').style.display=prof?'':'none'}
+function applyRole(){const m=prof&&prof.level==='ql';['tabMgr','tabTl'].forEach(i=>$('#'+i).style.display=m?'':'none');$('#bLogout').style.display=prof?'':'none'}
 $('#bLogout').onclick=()=>{localStorage.removeItem('ptv_profile');location.reload()};
 setInterval(render,2000);
 /* ================= NGƯỜI DÙNG + GPS ================= */
-$('#pd').innerHTML=DEPTS.map(d=>`<option value="${d}">${ZN[d].n}</option>`).join('');
 let me=null,prof=JSON.parse(localStorage.getItem('ptv_profile')||'null'),lastGeo=0,demoDist=40,manualOut=false;
+if(prof){prof.level=(prof.level==='ql'||prof.level==='qly')?'ql':'nv';prof.dept=prof.level}
 if(DEMO)$('#demoTag').textContent='· CHẾ ĐỘ DEMO';
 function geo(kind,msg,btn){const c={ok:'#34d399',warn:'#fbbf24',bad:'#fb7185',info:'#22d3ee'}[kind];const e=$('#geo');e.style.borderColor=c;e.style.background=c+'18';e.innerHTML=`<span>${msg}</span>`+(btn?`<button id="gb">${btn[0]}</button>`:'');if(btn)$('#gb').onclick=btn[1]}
 function checkIn(){if(!prof||(me&&present(me)))return;const z=ZN[prof.dept];
- if(!me){me=mk(prof.id,prof.name,prof.level||'nv',prof.dept,'in','',seatOf(prof.dept));me.me=true;people.push(me)}
+ if(!me){me=mk(online?uid:prof.id,prof.name,prof.level||'nv',prof.dept,'in','',seatOf(prof.dept));me.me=true;people.push(me)}
  me.st=hhmm()>CFG.late?'late':'in';me.inAt=hhmm();me.x=6;me.y=6.8;me.dest='seat';go(me,[[6,3.5],[me.seat[0],3.5],me.seat]);
- acts.unshift({t:hhmm(),tx:prof.name+' vừa check-in',z:z.n});render()}
-function checkOut(){if(!me||!present(me))return;me.st='out';acts.unshift({t:hhmm(),tx:me.name+' đã ra về',z:ZN[me.dept].n});render()}
+ acts.unshift({t:hhmm(),tx:prof.name+' vừa check-in',z:z.n});rtPut();render()}
+function checkOut(){if(!me||!present(me))return;me.st='out';acts.unshift({t:hhmm(),tx:me.name+' đã ra về',z:ZN[me.dept].n});rtOut();render()}
 function onPos(lat,lng,acc){lastGeo=Date.now();
  if(acc>CFG.maxAcc){geo('warn','Tín hiệu GPS yếu (±'+Math.round(acc)+' m). Hãy ra chỗ thoáng hơn.');return}
  const d=haversine(lat,lng,CFG.lat,CFG.lng);
@@ -225,7 +230,7 @@ function onPos(lat,lng,acc){lastGeo=Date.now();
   if(manualOut){geo('info','Bạn đã ra về.',back);return}
   checkIn();geo('ok','Bạn đang ở Đảng ủy (cách '+Math.round(d)+' m) · đã check-in',['Ra về',()=>{manualOut=true;checkOut();geo('info','Bạn đã ra về.',back)}])}
  else{manualOut=false;checkOut();geo('bad','Bạn đang cách Đảng ủy '+Math.round(d)+' m. Cần vào trong phạm vi '+CFG.radius+' m để hiện nhân vật.')}}
-function startGeo(){
+async function startGeo(){await rtInit();
  if(DEMO){const t=()=>onPos(CFG.lat,CFG.lng+demoDist/111320,10);t();setInterval(t,3000);
   const b=document.createElement('button');b.className='btn';b.textContent='Demo: đổi trong/ngoài';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:5';b.onclick=()=>{demoDist=demoDist<100?450:40;t()};document.body.append(b);return}
  if(!navigator.geolocation){geo('bad','Thiết bị không hỗ trợ GPS.');return}
@@ -233,10 +238,40 @@ function startGeo(){
  navigator.geolocation.watchPosition(p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy),
   e=>geo('bad',e.code===1?'Bạn đã từ chối quyền vị trí. Vào Cài đặt trình duyệt → Quyền → Vị trí → Cho phép, rồi tải lại trang.':'Không lấy được vị trí, thử lại sau.'),
   {enableHighAccuracy:true,maximumAge:10000,timeout:20000})}
+/* ================= REALTIME (Firebase) ================= */
+let db=null,uid=null,offset=0,online=false,rtFirst=true;
+const TS=()=>firebase.database.ServerValue.TIMESTAMP,day=()=>new Date().toISOString().slice(0,10);
+async function rtInit(){
+ const tag=$('#demoTag');
+ if(!(CFG.fb.apiKey&&CFG.fb.databaseURL&&window.firebase)){tag.textContent+=' · Chưa kết nối Firebase (chạy cục bộ)';return}
+ try{firebase.initializeApp(CFG.fb);uid=(await firebase.auth().signInAnonymously()).user.uid;db=firebase.database();online=true;
+  db.ref('.info/serverTimeOffset').on('value',x=>offset=x.val()||0);
+  db.ref('presence').on('value',syncRemote);tag.textContent+=' · Realtime ✓'}
+ catch(e){online=false;console.error(e);tag.textContent+=' · Lỗi kết nối Firebase'}}
+/* Nhận dữ liệu của mọi người: tạo/cập nhật/xóa nhân vật tương ứng */
+function syncRemote(snap){const v=snap.val()||{},now=Date.now()+offset;
+ Object.keys(v).forEach(id=>{if(id===uid)return;const r=v[id],lv=r.level==='ql'?'ql':'nv',last=r.lastSeen||0;
+  const st=(r.status==='out'||now-last>CFG.staleMs)?'out':(r.status||'in');let p=people.find(x=>x.id===id);
+  const enter=q=>{q.x=6;q.y=6.8;q.mode='walk';q.dest='seat';q.seat=seatOf(q.dept);go(q,[[6,3.5],[q.seat[0],3.5],q.seat])};
+  if(!p){p=mk(id,r.name||'Ẩn danh',lv,lv,st,r.checkInAt||'',[6,6.8,0]);people.push(p);if(present(p)){enter(p);if(!rtFirst)acts.unshift({t:hhmm(),tx:p.name+' vừa check-in',z:ZN[lv].n})}}
+  else{const was=present(p);p.st=st;p.inAt=r.checkInAt||p.inAt;
+   if(!was&&present(p)){enter(p);acts.unshift({t:hhmm(),tx:p.name+' vừa check-in',z:ZN[p.dept].n})}
+   else if(was&&!present(p))acts.unshift({t:hhmm(),tx:p.name+' đã ra về',z:ZN[p.dept].n})}
+  p.last=last});
+ for(let i=people.length-1;i>=0;i--)if(!people[i].me&&!v[people[i].id])people.splice(i,1);
+ rtFirst=false;render()}
+function rtPut(){if(!online||!me)return;const r=db.ref('presence/'+uid);
+ r.set({name:me.name,level:me.level,status:me.st,checkInAt:me.inAt,lastSeen:TS()});
+ r.onDisconnect().update({status:'out',lastSeen:TS()});/* đóng tab/mất mạng → tự "ra về" */
+ db.ref('history/'+day()+'/'+uid+'/in').transaction(x=>x||me.inAt)}
+function rtOut(){if(!online||!uid)return;db.ref('presence/'+uid).update({status:'out',lastSeen:TS()});db.ref('history/'+day()+'/'+uid+'/out').set(hhmm())}
+function rtBeat(){if(online&&me&&present(me))db.ref('presence/'+uid+'/lastSeen').set(TS())}
+/* Quá 3 phút không có nhịp tim → coi là đã rời */
+setInterval(()=>{if(!online)return;const now=Date.now()+offset;people.forEach(p=>{if(!p.me&&present(p)&&p.last&&now-p.last>CFG.staleMs){p.st='out';acts.unshift({t:hhmm(),tx:p.name+' đã rời (mất tín hiệu)',z:ZN[p.dept].n});render()}})},5000);
 /* Heartbeat: quá 3 phút mất tín hiệu → đã rời */
-setInterval(()=>{if(me&&present(me)&&Date.now()-lastGeo>CFG.staleMs){checkOut();geo('warn','Mất tín hiệu quá 3 phút, trạng thái: Đã rời.')}},CFG.beatMs);
+setInterval(()=>{rtBeat();if(me&&present(me)&&Date.now()-lastGeo>CFG.staleMs){checkOut();geo('warn','Mất tín hiệu quá 3 phút, trạng thái: Đã rời.')}},CFG.beatMs);
 $('#pf').onsubmit=e=>{e.preventDefault();const lv=$('#pl').value;if($('#pp').value!==CFG.pins[lv]){alert('Sai mã PIN');return}
- prof={id:'me_'+Math.random().toString(36).slice(2,9),name:$('#pn').value.trim(),level:lv,dept:$('#pd').value};localStorage.setItem('ptv_profile',JSON.stringify(prof));$('#modal').style.display='none';applyRole();startGeo()};
+ prof={id:'me_'+Math.random().toString(36).slice(2,9),name:$('#pn').value.trim(),level:lv,dept:lv};localStorage.setItem('ptv_profile',JSON.stringify(prof));$('#modal').style.display='none';applyRole();startGeo()};
 if(!prof)$('#modal').style.display='grid';else{applyRole();startGeo()}
 resize();render();requestAnimationFrame(frame);
 </script></body></html>
