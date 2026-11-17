@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#070b24">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="preconnect" href="https://script.google.com"><link rel="preconnect" href="https://script.googleusercontent.com"><link rel="preconnect" href="https://laithieu-c5e3b-default-rtdb.asia-southeast1.firebasedatabase.app">
 <title>Văn phòng số Đảng ủy Lái Thiêu</title>
@@ -8,6 +8,9 @@
 <style>
 :root{--bg:#070b24;--card:rgba(20,24,64,.7);--line:rgba(120,130,255,.25);--tx:#e8ebff;--mu:#8e95c9;--cy:#22d3ee;--pk:#f472b6;--gr:#34d399;--ye:#fbbf24}
 *{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%;touch-action:manipulation}
+body{overscroll-behavior-x:none}
+input,select,textarea{font-size:16px}
 body{font-family:'Be Vietnam Pro',system-ui,sans-serif;background:radial-gradient(1200px 600px at 70% -10%,#1d1a5e,#070b24 60%);color:var(--tx);min-height:100vh;padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom)}
 header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 4px}
 h1{font-size:18px;font-weight:800}h1+p{font-size:11px;color:var(--mu)}
@@ -317,7 +320,7 @@ function startGeo(){rtReady();welAt(2);geoOn=true;
  geo('info','Đang xác định vị trí…');
  if(geoW!=null){try{navigator.geolocation.clearWatch(geoW)}catch(e){}}
  geoW=navigator.geolocation.watchPosition(p=>rtReady().then(()=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy)),
-  e=>{welHide(true);geo('bad',e.code===1?'Bạn chưa cấp quyền vị trí.':'Không lấy được vị trí, thử lại sau.');if(e.code===1)showLoc(true)},
+  e=>{welHide(true);geo('bad',e.code===1?'Bạn chưa cấp quyền vị trí.':'Không lấy được vị trí, thử lại sau.');},
   {enableHighAccuracy:true,maximumAge:10000,timeout:20000})}
 /* ================= REALTIME (Firebase) ================= */
 let db=null,uid=null,offset=0,online=false,rtFirst=true,tok=null;
@@ -357,6 +360,9 @@ function rtBeat(){if(online&&me&&present(me))db.ref('presence/'+uid+'/lastSeen')
 /* Quá 3 phút không có nhịp tim → coi là đã rời */
 setInterval(()=>{if(!online)return;const now=Date.now()+offset;people.forEach(p=>{if(!p.me&&present(p)&&p.last&&isStale(p.last,false,now)){p.st='out';acts.unshift({t:hhmm(),tx:p.name+' đã rời (mất tín hiệu)',z:rn(p)});render()}})},5000);
 /* Hộp thoại giải thích trước khi xin quyền vị trí */
+async function diagLoc(e){let st='không rõ';try{st=(await navigator.permissions.query({name:'geolocation'})).state}catch(x){}
+ const el=document.createElement('p');el.style.cssText='font-size:12px;opacity:.7;margin-top:8px';
+ el.textContent='Chẩn đoán: quyền='+st+' · lỗi '+e.code+(e.message?' ('+e.message+')':'');$('#lb').append(el)}
 function showLoc(denied){const m=$('#locModal'),b=$('#lbtn');welHide(true);m.style.display='grid';
  if(!denied){$('#lt').textContent='Cần cấp quyền truy cập vị trí';
   $('#lb').innerHTML=`<p>Để xác định bạn có đang ở <b>Đảng ủy phường Lái Thiêu</b> hay không (trong bán kính ${CFG.radius} m), ứng dụng cần truy cập vị trí điện thoại của bạn. Nếu bạn đang ở Đảng ủy, nhân vật của bạn sẽ hiện trong văn phòng số và bạn được ghi nhận có mặt.</p>
@@ -370,6 +376,10 @@ function showLoc(denied){const m=$('#locModal'),b=$('#lbtn');welHide(true);m.sty
 function askLoc(){startGeo()}
 /* Gọi xin vị trí ngay lúc người dùng bấm nút (cử chỉ chạm) để trình duyệt hiện hộp hỏi mặc định, chỉ 1 lần */
 function primeGeo(){try{if(!DEMO&&navigator.geolocation)navigator.geolocation.getCurrentPosition(()=>{},()=>{},{enableHighAccuracy:false,maximumAge:600000,timeout:60000})}catch(e){}}
+/* Khóa zoom (iOS bỏ qua user-scalable=no): chặn chụm 2 ngón và chạm đúp */
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
+document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
+let _lt=0;document.addEventListener('touchend',e=>{const n=Date.now();if(n-_lt<350)e.preventDefault();_lt=n},{passive:false});
 /* Heartbeat: chỉ cập nhật lastSeen, không tự ra về khi tab bị treo nền */
 setInterval(rtBeat,CFG.beatMs);
 $('#pf').onsubmit=e=>{e.preventDefault();primeGeo();const lv=$('#pl').value;if($('#pp').value!==CFG.pins[lv]){alert('Sai mã PIN');return}
