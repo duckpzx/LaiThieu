@@ -55,6 +55,13 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 .view{display:none}.view.on{display:block}
 .zg{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:12px}
 .empty{color:var(--mu);font-size:12px;display:block;padding:4px 0}
+#attD{background:#070b24;border:1px solid var(--line);color:#fff;border-radius:9px;padding:6px 10px;font:14px 'Be Vietnam Pro',system-ui,sans-serif;color-scheme:dark}
+.tb{width:100%;border-collapse:collapse;font-size:12px;min-width:680px}
+.tb th,.tb td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tb th{color:var(--mu);font-weight:600;font-size:11px;white-space:nowrap}
+.tb td.t{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.tb .nt{color:var(--ye)}.wn{color:#fb7185}
+.sum{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mu);margin-bottom:6px}.sum b{color:var(--tx)}
 @media(max-width:639px){
  .tabs{width:100%}
  .tabs button{flex:1 0 auto;text-align:center;padding:8px 10px}
@@ -135,7 +142,8 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
  <div class="chips" id="chips"></div>
 </div>
 <div class="view" id="vmap"><div class="zg" id="zg"></div></div>
-<div class="view" id="vmgr"><div class="cd" id="mg"></div></div>
+<div class="view" id="vmgr"><div class="cd" id="mg"></div>
+ <div class="cd" id="attc" style="margin:12px 0"><h3>Bảng chấm công</h3><div class="rb"><input type="date" id="attD"><button class="btn" id="attL">Xem</button><button class="btn" id="attX">Xuất CSV</button></div><div id="attB" style="margin-top:10px;overflow-x:auto"></div></div></div>
 <div class="view" id="vtl"><div class="cd" id="tl"></div></div>
 <div class="grid">
  <div class="cd"><h3>Cán bộ đang có mặt <span id="pc"></span></h3><div id="plist"></div></div>
@@ -164,12 +172,15 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 const CFG={lat:10.899174659008123,lng:106.69777577115912,radius:120,maxAcc:250,late:'07:30',pins:{nv:'2026',ql:'8888'},staleMs:36000000,/* 10 giờ: tab bị hệ điều hành đóng băng nền vẫn được coi là còn online */beatMs:60000,
  /* DÁN CẤU HÌNH FIREBASE VÀO ĐÂY (xem hướng dẫn). Để trống = chạy cục bộ, chưa realtime */
  /* Link Web App của Apps Script (xem hướng dẫn). Để trống = đăng nhập bằng PIN như cũ */
- loginUrl:'https://script.google.com/macros/s/AKfycbyfI2f75Wsh5cLHDCzs_i4ONGEeHOAE-n_EGoTuD_MpGpc-5YK6W0WLCoAHHFBPpto/exec',
+ loginUrl:'https://script.google.com/macros/s/AKfycbxuJA4wDNi2tyfGWw16W41ZWguBra-ob8yWjxshT4gk-bgXiK0aRMMZV5PxJPLcP5U/exec',
+ /* Máy chủ chấm công: để trống = dùng chung link loginUrl (Ma.gs đã gộp chấm công) */
+ guardUrl:'',
  fb:{apiKey:'AIzaSyAQHKpqd_DWXCrOtpWfAUx6K1gr387USek',authDomain:'laithieu-c5e3b.firebaseapp.com',
   /* Kiểm tra lại địa chỉ này ở trang Realtime Database (đầu trang); nếu khác thì sửa */
   databaseURL:'https://laithieu-c5e3b-default-rtdb.asia-southeast1.firebasedatabase.app',
   projectId:'laithieu-c5e3b',appId:'1:130149669743:web:c86fb4a98ac24a01d8669a'}};
 const DEMO=new URLSearchParams(location.search).get('demo')==='1';
+CFG.guardUrl=CFG.guardUrl||CFG.loginUrl;
 /* Khu vực trên lưới 12x7 (x,y,rộng,cao). Phòng họp/Pantry là khu dùng chung */
 const ZONES=[
  {id:'ql',n:'Phòng Quản lý',c:'#22d3ee',f:'#c9a574',x:0,y:0,w:3,h:3},
@@ -297,7 +308,7 @@ function renderMgr(){if(!prof||prof.level!=='ql')return;
 $('#mg').onclick=e=>{const o=e.target.dataset.out;if(o){const p=people.find(x=>x.id===o);if(p){p.st='out';if(online&&!p.me)db.ref('presence/'+p.id).update({status:'out',lastSeen:TS()}).catch(()=>alert('Không đủ quyền: hãy thêm UID của bạn vào mục admins trong Firebase.'));acts.unshift({t:hhmm(),tx:p.name+' được quản lý cho ra về',z:rn(p)});render()}}
  if(e.target.dataset.csv){const r=['Họ tên,Cấp,Bộ phận,Trạng thái,Giờ vào'].concat(people.map(p=>[p.name,p.role,rn(p),ST[p.st],p.inAt].join(',')));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+r.join('\n')],{type:'text/csv'}));a.download='chuyen-can-'+new Date().toISOString().slice(0,10)+'.csv';a.click()}};
 function applyRole(){const m=prof&&prof.level==='ql';['tabMgr','tabTl'].forEach(i=>$('#'+i).style.display=m?'':'none');$('#bLogout').style.display=prof?'':'none'}
-$('#bLogout').onclick=()=>{localStorage.removeItem('ptv_profile');location.reload()};
+$('#bLogout').onclick=()=>{const lk=dlock();if(!confirm(lk?'Hôm nay thiết bị này đã chấm công cho '+(lk.n||lk.u)+'.\nSau khi thoát, máy này chỉ đăng nhập lại được đúng tài khoản đó trong hôm nay.\n\nVẫn đổi tài khoản?':'Đổi tài khoản?'))return;localStorage.removeItem('ptv_profile');location.reload()};
 /* Đồng hồ: ca sáng 8:00–12:00, ca chiều 13:30–17:30, đếm ngược giờ ra về */
 function clock(){const d=new Date(),sec=d.getHours()*3600+d.getMinutes()*60+d.getSeconds();
  const f=x=>[Math.floor(x/3600),Math.floor(x%3600/60),x%60].map(v=>String(v).padStart(2,'0')).join(':');let lab,cd;
@@ -325,7 +336,7 @@ function checkIn(){if(!prof||(me&&present(me)))return;
   const r=localStorage.getItem('ptv_room');me.room=(r&&ZN[r]&&(me.level==='ql'||r!=='ql'))?r:(me.level==='ql'?'ql':'ngoai')}
  if(localStorage.getItem('ptv_in')!==day()){if(isLate())localStorage.setItem('ptv_late',day());localStorage.setItem('ptv_in',day())}
  me.st=stIn();me.inAt=hhmm();me.note='';enterOffice(me);
- acts.unshift({t:hhmm(),tx:prof.name+' vừa check-in',z:rn(me)});rtPut();render()}
+ acts.unshift({t:hhmm(),tx:prof.name+' vừa check-in',z:rn(me)});rtPut();render();attIn()}
 function checkOut(){if(!me||!present(me))return;me.st='out';acts.unshift({t:hhmm(),tx:me.name+' đã ra về',z:rn(me)});rtOut();render()}
 function pickRoom(id){if(!me||!present(me)||!ZN[id]||(id==='ql'&&me.level!=='ql'))return;me.room=id;localStorage.setItem('ptv_room',id);moveTo(me);rtUp({zone:id});
  acts.unshift({t:hhmm(),tx:me.name+' vào '+ZN[id].n,z:ZN[id].n});render()}
@@ -334,13 +345,15 @@ function setAway(kind){if(!me||!present(me))return;let note='';
  me.st=kind;me.note=note;acts.unshift({t:hhmm(),tx:me.name+(kind==='lunch'?' đi nghỉ trưa':' xin ra ngoài'+(note?': '+note:'')),z:rn(me)});rtPut();render()}
 function resume(){if(!me||(me.st!=='lunch'&&me.st!=='away'))return;
  if(lastD==null||lastD-lastAcc*.5>CFG.radius){geo('bad','Bạn cần ở trong phạm vi Đảng ủy ('+CFG.radius+' m) để kết nối lại.');return}
- me.st=stIn();me.note='';enterOffice(me);acts.unshift({t:hhmm(),tx:me.name+' đã kết nối lại',z:rn(me)});rtPut();geo('ok','Đã kết nối lại · bạn đang ở Đảng ủy',['Ra về',()=>{manualOut=true;checkOut()}]);render()}
-function renderMe(){const e=$('#mebar');let h='';
- if(me&&present(me))h=`<div class="rb"><small style="color:var(--mu)">Chọn phòng:</small>${ZONES.filter(z=>z.id!=='ql'||me.level==='ql').map(z=>`<button data-room="${z.id}" class="${me.room===z.id?'on':''}">${z.n}</button>`).join('')}</div><div class="rb" style="margin-top:8px"><button class="w" data-act="lunch">🍚 Nghỉ trưa</button><button class="w" data-act="away">🚶 Xin ra ngoài</button></div>`;
- else if(me&&(me.st==='lunch'||me.st==='away'))h=`<div class="rb"><span>${me.st==='lunch'?'🍚 Bạn đang nghỉ trưa':'🚶 Bạn đang ra ngoài'+(me.note?' ('+me.note+')':'')}</span><button data-act="resume">🔌 Kết nối lại</button></div>`;
+ me.st=stIn();me.note='';enterOffice(me);acts.unshift({t:hhmm(),tx:me.name+' đã kết nối lại',z:rn(me)});rtPut();geo('ok','Đã kết nối lại · bạn đang ở Đảng ủy',['Kết thúc ca',endShift]);render()}
+function renderMe(){const e=$('#mebar');let h='';const endB='<button class="w" data-act="end">✅ Kết thúc ca</button>',inT=att&&att.in?`<small style="color:var(--mu)">Vào ca lúc <b style="color:var(--tx)">${att.in}</b></small>`:'';
+ if(me&&present(me))h=`<div class="rb"><small style="color:var(--mu)">Chọn phòng:</small>${ZONES.filter(z=>z.id!=='ql'||me.level==='ql').map(z=>`<button data-room="${z.id}" class="${me.room===z.id?'on':''}">${z.n}</button>`).join('')}</div><div class="rb" style="margin-top:8px"><button class="w" data-act="lunch">🍚 Nghỉ trưa</button><button class="w" data-act="away">🚶 Xin ra ngoài</button>${endB}${inT}</div>`;
+ else if(me&&(me.st==='lunch'||me.st==='away'))h=`<div class="rb"><span>${me.st==='lunch'?'🍚 Bạn đang nghỉ trưa':'🚶 Bạn đang ra ngoài'+(me.note?' ('+me.note+')':'')}</span><button data-act="resume">🔌 Kết nối lại</button>${endB}</div>`;
+ else if(att&&att.in&&!att.out)h=`<div class="rb"><span>⏱ Hôm nay bạn vào ca lúc <b>${att.in}</b> nhưng chưa kết thúc ca.</span>${endB}</div>`;
+ else if(att&&att.out)h=`<div class="rb"><span>✅ Hôm nay: vào <b>${att.in}</b> · ra <b>${att.out}</b></span></div>`;
  e.style.display=h?'block':'none';if(e._h!==h){e.innerHTML=h;e._h=h}}
-$('#mebar').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.room)pickRoom(b.dataset.room);else if(b.dataset.act==='resume')resume();else if(b.dataset.act)setAway(b.dataset.act)};
-function onPos(lat,lng,acc){welAt(3);try{onPos0(lat,lng,acc)}finally{setTimeout(welHide,450)}}
+$('#mebar').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.room)pickRoom(b.dataset.room);else if(b.dataset.act==='resume')resume();else if(b.dataset.act==='end')endShift();else if(b.dataset.act)setAway(b.dataset.act)};
+function onPos(lat,lng,acc){welAt(3);lastPos=[lat,lng,acc];attP.then(()=>{try{onPos0(lat,lng,acc)}finally{setTimeout(welHide,450)}})}
 let far=0,wakePending=false;
 function dayRoll(){if(me&&present(me)&&me.day&&me.day!==day()){me.day=day();me.inAt=hhmm();localStorage.setItem('ptv_in',day());localStorage.removeItem('ptv_late');rtPut()}}
 function onPos0(lat,lng,acc){lastGeo=Date.now();try{localStorage.setItem('ptv_locok','1')}catch(e){}
@@ -348,9 +361,9 @@ function onPos0(lat,lng,acc){lastGeo=Date.now();try{localStorage.setItem('ptv_lo
  const d=haversine(lat,lng,CFG.lat,CFG.lng);lastD=d;lastAcc=acc;
  if(me&&(me.st==='lunch'||me.st==='away')){geo('info',(me.st==='lunch'?'Bạn đang nghỉ trưa':'Bạn đang ra ngoài')+' · cách Đảng ủy '+Math.round(d)+' m. Khi quay lại, bấm "Kết nối lại".');return}
  /* Trong nhà GPS sai số lớn: trừ bớt nửa sai số khi so với bán kính */
- if(d-acc*.5<=CFG.radius){far=0;dayRoll();if(wakePending){wakePending=false;rtBeat()}const back=['Vào lại',()=>{manualOut=false;onPos(lat,lng,acc)}];
-  if(manualOut){geo('info','Bạn đã ra về.',back);return}
-  checkIn();geo('ok','Bạn đang ở Đảng ủy (cách '+Math.round(d)+' m) · đã check-in',['Ra về',()=>{manualOut=true;checkOut();geo('info','Bạn đã ra về.',back)}])}
+ if(d-acc*.5<=CFG.radius){far=0;dayRoll();if(wakePending){wakePending=false;rtBeat()}const back=['Vào lại',()=>{manualOut=false;againNext=true;onPos(lat,lng,acc)}];
+  if(manualOut){geo('info','Bạn đã kết thúc ca hôm nay'+(att&&att.out?' lúc '+att.out:'')+'.',back);return}
+  checkIn();geo('ok','Bạn đang ở Đảng ủy (cách '+Math.round(d)+' m) · đã check-in',['Kết thúc ca',endShift])}
  else{wakePending=false;if(me&&present(me)&&++far<2){geo('warn','Vị trí tạm thời ngoài phạm vi, đang kiểm tra lại…');return}manualOut=false;checkOut();geo('bad','Bạn đang cách Đảng ủy '+Math.round(d)+' m. Cần vào trong phạm vi '+CFG.radius+' m để hiện nhân vật.')}}
 let geoW=null;
 function startGeo(){rtReady();welAt(2);geoOn=true;
@@ -424,6 +437,50 @@ let _lt=0;document.addEventListener('touchend',e=>{const n=Date.now();if(n-_lt<3
 setInterval(rtBeat,CFG.beatMs);
 $('#pf').onsubmit=e=>{e.preventDefault();primeGeo();const lv=$('#pl').value;if($('#pp').value!==CFG.pins[lv]){alert('Sai mã PIN');return}
  prof={id:'me_'+Math.random().toString(36).slice(2,9),name:$('#pn').value.trim(),level:lv,dept:lv};localStorage.setItem('ptv_profile',JSON.stringify(prof));$('#modal').style.display='none';applyRole();askLoc()};
+/* ================= CHẤM CÔNG + KHÓA THIẾT BỊ (chống điểm danh hộ) ================= */
+const ld=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+/* Mã thiết bị: lưu cả localStorage lẫn cookie để khó bị xóa */
+const DEV=(()=>{const ck=(document.cookie.match(/(?:^|; )ptv_dev=([^;]+)/)||[])[1];let id=null;try{id=localStorage.getItem('ptv_dev')}catch(e){}id=id||ck;
+ if(!id)id=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)).replace(/-/g,'');
+ try{localStorage.setItem('ptv_dev',id)}catch(e){}document.cookie='ptv_dev='+id+';max-age=315360000;path=/;SameSite=Lax';return id})();
+/* Đặc điểm máy (không đổi khi xóa dữ liệu/ẩn danh) → giúp quản lý phát hiện 1 máy chấm cho nhiều người */
+const FP=(()=>{const s=screen,n=navigator;return hash([n.userAgent,n.language,n.hardwareConcurrency,n.deviceMemory,n.maxTouchPoints,s.width+'x'+s.height,s.colorDepth,devicePixelRatio,Intl.DateTimeFormat().resolvedOptions().timeZone].join('|')).toString(36)})();
+let att=null,attP=Promise.resolve(),lastPos=null,againNext=false,attRows=[];
+const dlock=()=>{try{const o=JSON.parse(localStorage.getItem('ptv_dlock')||'null');return o&&o.d===ld()?o:null}catch(e){return null}};
+const setLock=()=>{if(prof)try{localStorage.setItem('ptv_dlock',JSON.stringify({d:ld(),u:String(prof.user||prof.id).toLowerCase(),n:prof.name}))}catch(e){}};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function guard(action,extra){if(!CFG.guardUrl||!prof||!prof.token)return Promise.resolve({ok:true,skip:true});
+ return fetch(CFG.guardUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,token:prof.token,user:prof.user,dev:DEV,fp:FP},extra||{}))}).then(r=>r.json())}
+function lockedOut(msg){alert(msg);localStorage.removeItem('ptv_profile');location.reload()}
+/* Lấy bản ghi chấm công hôm nay + kiểm tra khóa thiết bị (gọi khi đăng nhập/mở app) */
+function syncAtt(){const lk=dlock();if(prof&&lk&&lk.u!==String(prof.user||prof.id).toLowerCase()){lockedOut('Thiết bị này hôm nay đã chấm công cho '+(lk.n||lk.u)+'. Mỗi thiết bị chỉ được chấm công cho 1 người mỗi ngày.');return new Promise(()=>{})}
+ return guard('claim').then(j=>{if(j.locked){lockedOut(j.msg);return new Promise(()=>{})}if(j.auth===false){lockedOut(j.msg);return new Promise(()=>{})}
+  if(j.ok&&!j.skip){att=j.rec||null;if(att&&att.out)manualOut=true}render()}).catch(()=>{})}
+function attIn(){const again=againNext;againNext=false;
+ guard('in',{again}).then(j=>{if(j.locked)return lockedOut(j.msg);if(j.ok){setLock();if(j.rec)att=j.rec;render()}}).catch(()=>setLock())}
+async function endShift(){if(!prof)return;const t=hhmm();
+ if(!confirm('Xác nhận KẾT THÚC CA lúc '+t+'?\n\nGiờ ra sẽ được ghi vào bảng chấm công hôm nay.'))return;
+ const far=lastD!=null&&lastD-lastAcc*.5>CFG.radius?Math.round(lastD)+' m':'';
+ try{const j=await guard('out',{far});if(j.locked)return lockedOut(j.msg);if(!j.ok){alert(j.msg||'Không chấm được giờ ra, hãy thử lại.');return}
+  att=j.rec||Object.assign(att||{},{out:t})}
+ catch(e){alert('Không kết nối được máy chủ chấm công. Hãy thử lại.');return}
+ manualOut=true;checkOut();
+ geo('info','Đã kết thúc ca lúc '+(att.out||t)+'. Hẹn gặp lại!',['Vào lại',()=>{manualOut=false;againNext=true;if(lastPos)onPos(...lastPos)}]);render()}
+/* ----- Bảng chấm công cho quản lý ----- */
+async function loadAtt(){const b=$('#attB');if(!prof||prof.level!=='ql')return;
+ if(!CFG.guardUrl){b.innerHTML='<small class="empty">Chưa cấu hình máy chủ chấm công (CFG.guardUrl).</small>';return}
+ const d=$('#attD').value||ld();b.innerHTML='<small class="empty"><span class="sp"></span>Đang tải…</small>';
+ try{const j=await guard('report',{day:d});if(!j.ok){b.innerHTML=`<small class="empty">${esc(j.msg||'Không tải được dữ liệu')}</small>`;return}
+  attRows=(j.rows||[]).sort((a,b)=>a.in.localeCompare(b.in));
+  const names=new Set(attRows.map(r=>r.name)),miss=ROSTER.filter(n=>!names.has(n)),noOut=attRows.filter(r=>!r.out).length,wn=attRows.filter(r=>r.warn).length;
+  b.innerHTML=`<div class="sum"><span>Ngày <b>${esc(j.day)}</b></span><span>Đã vào ca: <b>${attRows.length}</b></span><span>Đủ giờ ra: <b>${attRows.length-noOut}</b></span><span class="${noOut?'wn':''}">Thiếu giờ ra: <b>${noOut}</b></span><span class="${wn?'wn':''}">Cảnh báo: <b>${wn}</b></span>${ROSTER.length?`<span>Chưa chấm công: <b>${miss.length}</b></span>`:''}</div>`+
+  (attRows.length?`<table class="tb"><thead><tr><th>#</th><th>Họ tên</th><th>Cấp</th><th>Giờ vào</th><th>Giờ ra</th><th>Ghi chú</th><th>Cảnh báo</th></tr></thead><tbody>${attRows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.name)}</b><small style="display:block;color:var(--mu)">${esc(r.user)}</small></td><td>${esc(r.level)}</td><td class="t">${esc(r.in)}</td><td class="t ${r.out?'':'wn'}">${esc(r.out||'—')}</td><td class="nt">${esc(r.note)}</td><td class="wn">${esc(r.warn)}</td></tr>`).join('')}</tbody></table>`:'<small class="empty">Chưa có ai chấm công ngày này.</small>')+
+  (miss.length?`<p style="font-size:12px;color:var(--mu);margin-top:10px;line-height:1.5"><b style="color:var(--tx)">Chưa chấm công (${miss.length}):</b> ${miss.map(esc).join(', ')}</p>`:'')}
+ catch(e){b.innerHTML='<small class="empty">Không kết nối được máy chủ chấm công.</small>'}}
+$('#attD').value=ld();$('#attL').onclick=loadAtt;$('#tabMgr').addEventListener('click',loadAtt);
+$('#attX').onclick=()=>{if(!attRows.length){alert('Chưa có dữ liệu, hãy bấm "Xem" trước.');return}const q=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
+ const r=['Họ tên,Tài khoản,Cấp,Giờ vào,Giờ ra,Ghi chú,Cảnh báo'].concat(attRows.map(x=>[x.name,x.user,x.level,x.in,x.out,x.note,x.warn].map(q).join(',')));
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+r.join('\n')],{type:'text/csv'}));a.download='cham-cong-'+($('#attD').value||ld())+'.csv';a.click()};
 /* Đăng nhập bằng tài khoản Google Sheet (nếu đã cấu hình loginUrl) */
 const callApi=body=>fetch(CFG.loginUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}).then(r=>r.json());
 if(CFG.loginUrl){$('#pf').style.display='none';$('#lf').style.display='grid';
@@ -431,10 +488,15 @@ if(CFG.loginUrl){$('#pf').style.display='none';$('#lf').style.display='grid';
  if(prof&&prof.token)callApi({action:'check',token:prof.token}).then(j=>{if(!j.ok){localStorage.removeItem('ptv_profile');location.reload()}else if(j.level!==prof.level||j.name!==prof.name){prof.level=j.level;prof.dept=j.level;prof.name=j.name;localStorage.setItem('ptv_profile',JSON.stringify(prof));applyRole()}}).catch(()=>{});
 }
 function lfail(m){const f=$('#lf'),er=$('#lerr');er.textContent=m;er.style.display='block';f.classList.remove('shake');void f.offsetWidth;f.classList.add('shake')}
-$('#lf').onsubmit=async e=>{e.preventDefault();primeGeo();const b=$('#lsub');$('#lerr').style.display='none';b.disabled=true;b.innerHTML='<span class="sp"></span>Đang đăng nhập…';
- try{const j=await callApi({action:'login',u:$('#lu').value.trim(),p:$('#lp').value});
+$('#lf').onsubmit=async e=>{e.preventDefault();primeGeo();const b=$('#lsub');$('#lerr').style.display='none';
+ const lk=dlock(),uu=$('#lu').value.trim().toLowerCase();if(lk&&lk.u!==uu){lfail('Thiết bị này hôm nay đã chấm công cho '+(lk.n||lk.u)+'. Mỗi thiết bị chỉ được chấm công cho 1 người mỗi ngày.');return}
+ b.disabled=true;b.innerHTML='<span class="sp"></span>Đang đăng nhập…';
+ try{const j=await callApi({action:'login',u:$('#lu').value.trim(),p:$('#lp').value,dev:DEV});
   if(!j.ok){lfail(j.msg||'Sai tên đăng nhập hoặc mật khẩu');return}
   prof={id:'u_'+j.user,name:j.name,level:j.level==='ql'?'ql':'nv',user:j.user,token:j.token};prof.dept=prof.level;
+  const lk2=dlock();if(lk2&&lk2.u!==String(j.user).toLowerCase()){prof=null;lfail('Thiết bị này hôm nay đã chấm công cho '+(lk2.n||lk2.u)+'. Mỗi thiết bị chỉ được chấm công cho 1 người mỗi ngày.');return}
+  const c=await guard('claim').catch(()=>({ok:true}));if(c.locked||c.auth===false){prof=null;lfail(c.msg);return}
+  if(c.ok&&!c.skip){att=c.rec||null;manualOut=!!(att&&att.out)}
   localStorage.setItem('ptv_profile',JSON.stringify(prof));if(Array.isArray(j.roster))setRoster(j.roster);else loadRoster();
   rebuildShort();welShow();$('#modal').style.display='none';applyRole();askLoc()}
  catch(err){lfail('Không kết nối được máy chủ đăng nhập. Hãy thử lại.')}
@@ -474,6 +536,6 @@ addEventListener('pagehide',e=>{if(e.persisted||!online||!tok||!me||!present(me)
 /* ===== KHỞI ĐỘNG: kết nối Firebase ngay từ đầu, song song với việc đăng nhập ===== */
 rebuildShort();rtReady().then(()=>welAt(2));
 if(CFG.loginUrl){if(!prof)callApi({action:'ping'}).catch(()=>{});/* đánh thức Apps Script trong lúc người dùng gõ mật khẩu */else loadRoster()}
-if(!prof)$('#modal').style.display='grid';else{welShow();applyRole();askLoc()}
+if(!prof)$('#modal').style.display='grid';else{welShow();applyRole();attP=syncAtt();askLoc()}
 resize();render();requestAnimationFrame(frame);
 </script></body></html>
