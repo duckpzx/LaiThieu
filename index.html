@@ -367,13 +367,12 @@ function showLoc(denied){const m=$('#locModal'),b=$('#lbtn');welHide(true);m.sty
   $('#lb').innerHTML=`<p>Ứng dụng chưa được cấp quyền vị trí nên không xác định được bạn có đang ở Đảng ủy phường Lái Thiêu hay không. Hãy bật lại quyền:</p>
   <ul><li>📱 <b>Android (Chrome):</b> bấm biểu tượng ổ khóa cạnh địa chỉ → Quyền → Vị trí → Cho phép</li><li>🍎 <b>iPhone:</b> Cài đặt → Quyền riêng tư &amp; Bảo mật → Dịch vụ định vị (bật) → Chrome/Safari → <b>Khi dùng ứng dụng</b></li></ul><p>Sau đó bấm nút bên dưới.</p>`;
   b.textContent='Tôi đã bật – Thử lại';b.onclick=()=>{m.style.display='none';startGeo()}}}
-async function askLoc(){if(DEMO){startGeo();return}
- if(navigator.permissions){try{const r=await navigator.permissions.query({name:'geolocation'});
-  if(r.state==='denied'){geo('bad','Chưa có quyền vị trí.');showLoc(true);return}}catch(e){}}
- startGeo()}
+function askLoc(){startGeo()}
+/* Gọi xin vị trí ngay lúc người dùng bấm nút (cử chỉ chạm) để trình duyệt hiện hộp hỏi mặc định, chỉ 1 lần */
+function primeGeo(){try{if(!DEMO&&navigator.geolocation)navigator.geolocation.getCurrentPosition(()=>{},()=>{},{enableHighAccuracy:false,maximumAge:600000,timeout:60000})}catch(e){}}
 /* Heartbeat: chỉ cập nhật lastSeen, không tự ra về khi tab bị treo nền */
 setInterval(rtBeat,CFG.beatMs);
-$('#pf').onsubmit=e=>{e.preventDefault();const lv=$('#pl').value;if($('#pp').value!==CFG.pins[lv]){alert('Sai mã PIN');return}
+$('#pf').onsubmit=e=>{e.preventDefault();primeGeo();const lv=$('#pl').value;if($('#pp').value!==CFG.pins[lv]){alert('Sai mã PIN');return}
  prof={id:'me_'+Math.random().toString(36).slice(2,9),name:$('#pn').value.trim(),level:lv,dept:lv};localStorage.setItem('ptv_profile',JSON.stringify(prof));$('#modal').style.display='none';applyRole();askLoc()};
 /* Đăng nhập bằng tài khoản Google Sheet (nếu đã cấu hình loginUrl) */
 const callApi=body=>fetch(CFG.loginUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}).then(r=>r.json());
@@ -382,7 +381,7 @@ if(CFG.loginUrl){$('#pf').style.display='none';$('#lf').style.display='grid';
  if(prof&&prof.token)callApi({action:'check',token:prof.token}).then(j=>{if(!j.ok){localStorage.removeItem('ptv_profile');location.reload()}else if(j.level!==prof.level||j.name!==prof.name){prof.level=j.level;prof.dept=j.level;prof.name=j.name;localStorage.setItem('ptv_profile',JSON.stringify(prof));applyRole()}}).catch(()=>{});
 }
 function lfail(m){const f=$('#lf'),er=$('#lerr');er.textContent=m;er.style.display='block';f.classList.remove('shake');void f.offsetWidth;f.classList.add('shake')}
-$('#lf').onsubmit=async e=>{e.preventDefault();const b=$('#lsub');$('#lerr').style.display='none';b.disabled=true;b.innerHTML='<span class="sp"></span>Đang đăng nhập…';
+$('#lf').onsubmit=async e=>{e.preventDefault();primeGeo();const b=$('#lsub');$('#lerr').style.display='none';b.disabled=true;b.innerHTML='<span class="sp"></span>Đang đăng nhập…';
  try{const j=await callApi({action:'login',u:$('#lu').value.trim(),p:$('#lp').value});
   if(!j.ok){lfail(j.msg||'Sai tên đăng nhập hoặc mật khẩu');return}
   prof={id:'u_'+j.user,name:j.name,level:j.level==='ql'?'ql':'nv',user:j.user,token:j.token};prof.dept=prof.level;
