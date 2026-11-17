@@ -8,52 +8,92 @@
 <style>
 :root{--bg:#070b24;--card:rgba(20,24,64,.7);--line:rgba(120,130,255,.25);--tx:#e8ebff;--mu:#8e95c9;--cy:#22d3ee;--pk:#f472b6;--gr:#34d399;--ye:#fbbf24}
 *{box-sizing:border-box;margin:0}
-html{-webkit-text-size-adjust:100%;touch-action:manipulation}
-body{overscroll-behavior-x:none}
+html{-webkit-text-size-adjust:100%;touch-action:manipulation;overflow-x:hidden;max-width:100%}
+body{overscroll-behavior-x:none;overflow-x:hidden;max-width:100%;font-family:'Be Vietnam Pro',system-ui,sans-serif;background:radial-gradient(1200px 600px at 70% -10%,#1d1a5e,#070b24 60%) fixed;color:var(--tx);min-height:100vh;padding:max(8px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
 input,select,textarea{font-size:16px}
-body{font-family:'Be Vietnam Pro',system-ui,sans-serif;background:radial-gradient(1200px 600px at 70% -10%,#1d1a5e,#070b24 60%);color:var(--tx);min-height:100vh;padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom)}
-header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 4px}
-h1{font-size:18px;font-weight:800}h1+p{font-size:11px;color:var(--mu)}
-.tabs{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
-.tabs button{border:0;background:none;color:var(--mu);font:600 12px inherit;font-family:inherit;padding:8px 12px;border-radius:9px;cursor:pointer}
+header,#geo,#mebar,.view,.grid{max-width:1480px;margin-left:auto;margin-right:auto;width:100%}
+header{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between;padding:8px 0 10px}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;flex:1 1 auto}
+.brand-text{min-width:0}
+h1{font-size:clamp(16px,2.2vw,20px);font-weight:800;line-height:1.25;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+h1+p{font-size:11px;color:var(--mu);margin-top:2px;line-height:1.35}
+.tabs{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;backdrop-filter:blur(8px);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;max-width:100%}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{border:0;background:none;color:var(--mu);font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;padding:8px 12px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:color .2s,background .2s,box-shadow .2s}
+.tabs button:hover{color:var(--tx)}
 .tabs button.on{color:#fff;background:linear-gradient(90deg,#22d3ee,#d946ef);box-shadow:0 0 14px #22d3ee66}
-.kpis{display:flex;gap:8px}.kpi{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:6px 12px;min-width:92px}
-.kpi small{font-size:10px;color:var(--mu);display:block}.kpi b{font-size:20px}.kpi.g{border-color:#34d39988}.kpi.y{border-color:#fbbf2488}.kpi.c{border-color:#22d3ee88}
-#geo{margin:6px 0;padding:10px 14px;border-radius:12px;font-size:13px;border:1px solid;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-#geo button,.btn{background:linear-gradient(90deg,#22d3ee,#d946ef);border:0;color:#fff;font:600 12px 'Be Vietnam Pro';padding:7px 14px;border-radius:9px;cursor:pointer}
-.sc{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0a0d33;height:56vh;min-height:320px}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}
+.kpi{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 12px;min-width:0;backdrop-filter:blur(8px);transition:border-color .2s,transform .2s}
+.kpi small{font-size:10px;color:var(--mu);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kpi b{font-size:20px;line-height:1.25;display:block}.kpi.g{border-color:#34d39988}.kpi.y{border-color:#fbbf2488}.kpi.c{border-color:#22d3ee88}
+.clk{grid-column:1/-1;border-color:#a78bfa88;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 12px}
+.clk b{font-size:19px;font-variant-numeric:tabular-nums;letter-spacing:.5px}.clk small{display:block;white-space:normal}
+#geo{margin:6px 0 8px;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.45;border:1px solid;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+#geo span{flex:1 1 220px;min-width:0}
+#geo button,.btn{background:linear-gradient(90deg,#22d3ee,#d946ef);border:0;color:#fff;font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;padding:8px 14px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:opacity .2s,transform .15s,box-shadow .2s}
+#geo button:hover,.btn:hover{opacity:.92;box-shadow:0 0 14px #22d3ee55}
+#geo button:active,.btn:active{transform:scale(.97)}
+.sc{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0a0d33;height:50vh;min-height:330px;max-height:480px;box-shadow:0 8px 32px rgba(0,0,0,.35)}
 canvas{width:100%;height:100%;display:block;touch-action:none}
-.ctl{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
-.ctl button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:rgba(10,13,51,.8);color:var(--tx);font-size:16px;cursor:pointer}
-#info{position:absolute;left:10px;bottom:10px;background:rgba(10,13,51,.92);border:1px solid var(--cy);border-radius:12px;padding:10px 14px;font-size:12px;display:none;box-shadow:0 0 16px #22d3ee55}
-.chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0}.chips button{white-space:nowrap;background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:7px 12px;font:600 12px 'Be Vietnam Pro';cursor:pointer}
+.ctl{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:5px;z-index:2}
+.ctl button{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:rgba(10,13,51,.82);backdrop-filter:blur(6px);color:var(--tx);font-size:14px;cursor:pointer;display:grid;place-items:center;transition:border-color .2s,background .2s}
+.ctl button:hover{border-color:var(--cy);background:rgba(20,26,80,.92)}
+#info{position:absolute;left:10px;bottom:10px;max-width:calc(100% - 62px);background:rgba(10,13,51,.92);border:1px solid var(--cy);border-radius:12px;padding:10px 14px;font-size:12px;line-height:1.45;display:none;box-shadow:0 0 16px #22d3ee55;z-index:2}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.chips::-webkit-scrollbar{display:none}
+.chips button{white-space:nowrap;flex:0 0 auto;background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:7px 12px;font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;cursor:pointer;transition:border-color .2s,background .2s}
+.chips button:hover{border-color:var(--cy)}
 .chips button.on{background:linear-gradient(90deg,#22d3ee,#60a5fa);color:#06122e;border:0}
-.grid{display:grid;gap:12px;grid-template-columns:1fr;padding-bottom:30px}
-@media(min-width:1000px){.grid{grid-template-columns:1.1fr 1fr 1fr .9fr}.sc{height:520px}}
-.cd{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:14px;backdrop-filter:blur(8px)}
-.cd h3{font-size:14px;margin-bottom:10px}.cd h3 span{color:var(--cy);font-size:12px;margin-left:6px}
-.row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:12px}.row small{color:var(--mu);display:block;font-size:11px}
+.grid{display:grid;gap:12px;grid-template-columns:1fr;padding-bottom:24px;margin-top:4px}
+.cd{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:14px;backdrop-filter:blur(8px);min-width:0;transition:border-color .2s}
+.cd h3{font-size:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.cd h3 span{color:var(--cy);font-size:12px;margin-left:auto}
+.row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:12px;min-width:0}.row>div{min-width:0}.row small{color:var(--mu);display:block;font-size:11px}
 .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;flex:none;border:2px solid #fff3}
-.tag{margin-left:auto;font-size:10px;padding:3px 8px;border-radius:8px;background:#ffffff14;white-space:nowrap}
-.bar{height:7px;border-radius:5px;background:#ffffff14;flex:1}.bar i{display:block;height:100%;border-radius:5px}
-.don{width:120px;height:120px;border-radius:50%;display:grid;place-items:center;flex:none}
-.don div{width:88px;height:88px;border-radius:50%;background:#0d1040;display:grid;place-items:center;text-align:center;font-size:10px;color:var(--mu)}.don b{font-size:22px;color:#fff;display:block}
+.tag{margin-left:auto;font-size:10px;padding:3px 8px;border-radius:8px;background:#ffffff14;white-space:nowrap;flex:none}
+.bar{height:7px;border-radius:5px;background:#ffffff14;flex:1;min-width:60px}.bar i{display:block;height:100%;border-radius:5px;transition:width .4s ease}
+.don{width:116px;height:116px;border-radius:50%;display:grid;place-items:center;flex:none}
+.don div{width:84px;height:84px;border-radius:50%;background:#0d1040;display:grid;place-items:center;text-align:center;font-size:10px;color:var(--mu)}.don b{font-size:22px;color:#fff;display:block}
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}
 .view{display:none}.view.on{display:block}
-.zg{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.zg{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:12px}
+.empty{color:var(--mu);font-size:12px;display:block;padding:4px 0}
+@media(max-width:639px){
+ .tabs{width:100%}
+ .tabs button{flex:1 0 auto;text-align:center;padding:8px 10px}
+ #bLogout{padding:6px 11px;font-size:11px}
+}
+@media(min-width:640px){
+ body{padding:max(10px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom))}
+ .grid{grid-template-columns:repeat(2,1fr)}
+ .zg{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+ .ctl button{width:38px;height:38px;font-size:16px}
+}
+@media(min-width:768px){
+ .kpis{display:flex;width:auto;flex-wrap:wrap;align-items:stretch}
+ .kpi{min-width:94px}
+ .clk{display:block;min-width:196px}
+ .clk b{font-size:20px}
+}
+@media(min-width:1024px){
+ .brand{display:contents}
+ .brand-text{order:1;margin-right:auto}
+ .tabs{order:2}
+ #bLogout{order:3}
+ .kpis{order:4}
+ .grid{grid-template-columns:1.1fr 1fr 1fr .9fr}
+ .sc{height:520px;max-height:none}
+ .zg{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
 #modal{position:fixed;inset:0;background:#000a;display:none;place-items:center;z-index:9;padding:14px}
-#modal form{background:#0e1245;border:1px solid var(--cy);border-radius:16px;padding:18px;width:100%;max-width:380px;display:grid;gap:10px}
+#modal form{background:#0e1245;border:1px solid var(--cy);border-radius:16px;padding:18px;width:100%;max-width:380px;max-height:92vh;overflow-y:auto;display:grid;gap:10px}
 #modal input,#modal select{background:#070b24;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px;font:14px 'Be Vietnam Pro'}
 #modal label{font-size:11px;color:var(--mu)}
-.demo{font-size:10px;color:var(--ye);margin-left:8px}
+.demo{font-size:10px;color:var(--ye);font-weight:600}
 #locModal{position:fixed;inset:0;background:rgba(4,6,24,.84);backdrop-filter:blur(6px);display:none;place-items:center;z-index:20;padding:16px}
 .lc{max-width:410px;width:100%;max-height:92vh;overflow:auto;background:linear-gradient(160deg,#141a5c,#0b0f3a);border:1px solid var(--cy);border-radius:20px;padding:22px 20px;text-align:center;box-shadow:0 0 40px #22d3ee44}
 .pin{font-size:40px;width:84px;height:84px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;background:#22d3ee22;animation:pl 1.8s infinite}
 @keyframes pl{0%{box-shadow:0 0 0 0 #22d3ee77}100%{box-shadow:0 0 0 26px #22d3ee00}}
 #lb{font-size:13px;line-height:1.55;color:#cfd3ff;text-align:left;margin:12px 0 16px}#lb ul{padding:0;margin:10px 0}#lb li{list-style:none;margin:6px 0}#lb b{color:#fff}
 #lbtn{width:100%;padding:13px;font-size:14px}
-.clk{min-width:190px;border-color:#a78bfa88}.clk b{font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:.5px}.clk small{display:block}
-.rb{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.rb button{background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:8px 12px;font:600 12px 'Be Vietnam Pro';cursor:pointer}
+.rb{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.rb button{background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:8px 12px;font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;cursor:pointer;transition:border-color .2s,background .2s}
 .rb button.on{background:linear-gradient(90deg,#22d3ee,#60a5fa);color:#06122e;border:0}.rb .w{border-color:#fb923c88}
 #modal{background:radial-gradient(800px 500px at 50% 30%,rgba(29,26,94,.85),rgba(4,6,26,.92));backdrop-filter:blur(6px)}
 #modal form{animation:pop .55s cubic-bezier(.2,.9,.3,1.2) both;box-shadow:0 0 40px #22d3ee33}
@@ -82,9 +122,9 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 .wbar{height:3px;border-radius:3px;background:#ffffff14;margin-top:20px;overflow:hidden}.wbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#22d3ee,#d946ef);transition:width .5s}
 </style></head><body>
 <header>
- <div><h1>Văn phòng số <span class="demo" id="demoTag"></span></h1><p>Mỗi người một vị trí, cập nhật theo thời gian thực · Đảng ủy Lái Thiêu</p></div>
+ <div class="brand"><div class="brand-text"><h1>Văn phòng số <span class="demo" id="demoTag"></span></h1><p>Mỗi người một vị trí, cập nhật theo thời gian thực · Đảng ủy Lái Thiêu</p></div><button class="btn" id="bLogout" style="display:none">Đổi tài khoản</button></div>
  <div class="tabs"><button class="on" data-v="v3d">Văn phòng 3D</button><button data-v="vmap">Sơ đồ khu vực</button><button data-v="vtl" id="tabTl" style="display:none">Dòng thời gian</button><button data-v="vmgr" id="tabMgr" style="display:none">Quản lý</button></div>
- <button class="btn" id="bLogout" style="display:none">Đổi tài khoản</button><div class="kpis"><div class="kpi clk" id="clk"></div><div class="kpi c"><small>Đang có mặt</small><b id="k1">0</b></div><div class="kpi y"><small>Vắng mặt</small><b id="k2">0</b></div><div class="kpi g"><small>Chuyên cần</small><b id="k3">0%</b></div></div>
+ <div class="kpis"><div class="kpi clk" id="clk"></div><div class="kpi c"><small>Đang có mặt</small><b id="k1">0</b></div><div class="kpi y"><small>Vắng mặt</small><b id="k2">0</b></div><div class="kpi g"><small>Chuyên cần</small><b id="k3">0%</b></div></div>
 </header>
 <div id="geo"></div>
 <div id="mebar" class="cd" style="display:none;margin:8px 0;padding:10px"></div>
@@ -217,7 +257,7 @@ function frame(now){const dt=Math.min((now-(frame.l||now))/1000,.1);frame.l=now;
  const c=rt(cen[0],cen[1]),b=[(c[0]-c[1])*TW/2*Z,(c[0]+c[1])*TH/2*Z];ox=W/2-b[0];oy=H/2-b[1]+10;
  g.clearRect(0,0,W,H);floor();
  const L=items();people.forEach(p=>{if(present(p))L.push({d:rt(p.x,p.y).reduce((a,b)=>a+b)+.4,f:()=>person(p)})});
- L.sort((a,b)=>a.d-b.d).forEach(i=>i.f());drawFx();labels();if(!people.some(present)){g.fillStyle='#8e95c9';g.font="600 14px 'Be Vietnam Pro'";g.textAlign='center';g.fillText('Chưa có ai check-in · nhân vật sẽ hiện khi có người thật kết nối',W/2,H-18)}requestAnimationFrame(frame)}
+ L.sort((a,b)=>a.d-b.d).forEach(i=>i.f());drawFx();labels();if(!people.some(present)){g.fillStyle='#8e95c9';g.font=`600 ${W<480?12:14}px 'Be Vietnam Pro'`;g.textAlign='center';if(W<480){g.fillText('Chưa có ai check-in',W/2,H-32);g.fillText('Nhân vật sẽ hiện khi có người thật kết nối',W/2,H-14)}else g.fillText('Chưa có ai check-in · nhân vật sẽ hiện khi có người thật kết nối',W/2,H-18)}requestAnimationFrame(frame)}
 /* Di chuyển: đi theo hành lang y=3.5 để không xuyên bàn */
 function go(p,pts){p.path=pts;p.mode='walk'}
 function upd(p,dt){
@@ -244,16 +284,16 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.que
 function render(){
  const n=people.length,pr=people.filter(present),ab=people.filter(p=>p.st==='abs'||p.st==='out').length,rate=n?Math.round(pr.length/n*100):0;
  $('#k1').textContent=pr.length;$('#k2').textContent=n-pr.length;$('#k3').textContent=rate+'%';$('#pc').textContent=pr.length+'/'+n;
- $('#plist').innerHTML=pr.slice(0,6).map(p=>`<div class="row"><div class="av" style="background:${p.L.shirt}">${p.name.split(' ').pop()[0]}</div><div><b>${p.name}</b><small>${p.role} · ${rn(p)}</small></div><span class="tag">${p.inAt}</span></div>`).join('')||'<small>Chưa có ai check-in</small>';
- $('#act').innerHTML=acts.slice(0,6).map(a=>`<div class="row"><span style="color:var(--cy)">●</span><div>${a.tx}<small>${a.t} · ${a.z}</small></div></div>`).join('');
+ $('#plist').innerHTML=pr.slice(0,6).map(p=>`<div class="row"><div class="av" style="background:${p.L.shirt}">${p.name.split(' ').pop()[0]}</div><div><b>${p.name}</b><small>${p.role} · ${rn(p)}</small></div><span class="tag">${p.inAt}</span></div>`).join('')||'<small class="empty">Chưa có ai check-in</small>';
+ $('#act').innerHTML=acts.slice(0,6).map(a=>`<div class="row"><span style="color:var(--cy)">●</span><div>${a.tx}<small>${a.t} · ${a.z}</small></div></div>`).join('')||'<small class="empty">Chưa có hoạt động nào</small>';
  $('#dep').innerHTML=LEVELS.map(l=>{const a=people.filter(p=>p.level===l[0]),k=a.filter(present).length,v=a.length?Math.round(k/a.length*100):0;return`<div class="row"><span style="width:110px">${l[1]}</span><div class="bar"><i style="width:${v}%;background:${l[2]};box-shadow:0 0 8px ${l[2]}"></i></div><b>${v}%</b></div>`}).join('');
  const cnt=Object.fromEntries(Object.keys(ST).map(k=>[k,people.filter(p=>p.st===k).length]));let acc=0;
  $('#don').style.background=`conic-gradient(${Object.keys(ST).map(k=>{const s=acc/n*100;acc+=cnt[k];return`${STC[k]} ${s}% ${acc/n*100}%`}).join(',')})`;if(!n)$('#don').style.background='#ffffff22';$('#pct').textContent=rate+'%';
  $('#leg').innerHTML=Object.keys(ST).map(k=>`<div class="row"><span><i class="dot" style="background:${STC[k]}"></i>${ST[k]}</span><b style="margin-left:auto">${cnt[k]}</b></div>`).join('');
- $('#zg').innerHTML=ZONES.map(z=>{const a=people.filter(p=>present(p)&&inZone(p,z));return`<div class="cd" style="border-color:${z.c}88"><h3 style="color:${z.c}">${z.n}<span>${a.length} người</span></h3>${a.map(p=>`<div class="row">${p.name}</div>`).join('')||'<small>Trống</small>'}</div>`}).join('');
- renderMgr();renderMe();$('#tl').innerHTML='<h3>Dòng thời gian hôm nay</h3>'+acts.map(a=>`<div class="row"><b style="color:var(--cy)">${a.t}</b><div>${a.tx}<small>${a.z}</small></div></div>`).join('')}
+ $('#zg').innerHTML=ZONES.map(z=>{const a=people.filter(p=>present(p)&&inZone(p,z));return`<div class="cd" style="border-color:${z.c}88"><h3 style="color:${z.c}">${z.n}<span>${a.length} người</span></h3>${a.map(p=>`<div class="row">${p.name}</div>`).join('')||'<small class="empty">Trống</small>'}</div>`}).join('');
+ renderMgr();renderMe();$('#tl').innerHTML='<h3>Dòng thời gian hôm nay</h3>'+(acts.map(a=>`<div class="row"><b style="color:var(--cy)">${a.t}</b><div>${a.tx}<small>${a.z}</small></div></div>`).join('')||'<small class="empty">Chưa có hoạt động nào hôm nay</small>')}
 function renderMgr(){if(!prof||prof.level!=='ql')return;
- $('#mg').innerHTML='<h3>Quản lý · danh sách hôm nay</h3>'+(people.map(p=>`<div class="row"><div class="av" style="background:${p.L.shirt}">${p.name.split(' ').pop()[0]}</div><div><b>${p.level==='ql'?'★ ':''}${p.name}</b><small>${p.role} · ${rn(p)} · vào ${p.inAt||'-'}</small></div><span class="tag" style="color:${STC[p.st]}">${ST[p.st]}</span>${present(p)?`<button class="btn" data-out="${p.id}">Cho ra về</button>`:''}</div>`).join('')||'<small>Chưa có ai kết nối</small>')+'<div class="row"><button class="btn" data-csv="1">Xuất CSV hôm nay</button></div>'}
+ $('#mg').innerHTML='<h3>Quản lý · danh sách hôm nay</h3>'+(people.map(p=>`<div class="row" style="flex-wrap:wrap"><div class="av" style="background:${p.L.shirt}">${p.name.split(' ').pop()[0]}</div><div><b>${p.level==='ql'?'★ ':''}${p.name}</b><small>${p.role} · ${rn(p)} · vào ${p.inAt||'-'}</small></div><span class="tag" style="color:${STC[p.st]}">${ST[p.st]}</span>${present(p)?`<button class="btn" data-out="${p.id}">Cho ra về</button>`:''}</div>`).join('')||'<small class="empty">Chưa có ai kết nối</small>')+'<div class="row"><button class="btn" data-csv="1">Xuất CSV hôm nay</button></div>'}
 $('#mg').onclick=e=>{const o=e.target.dataset.out;if(o){const p=people.find(x=>x.id===o);if(p){p.st='out';if(online&&!p.me)db.ref('presence/'+p.id).update({status:'out',lastSeen:TS()}).catch(()=>alert('Không đủ quyền: hãy thêm UID của bạn vào mục admins trong Firebase.'));acts.unshift({t:hhmm(),tx:p.name+' được quản lý cho ra về',z:rn(p)});render()}}
  if(e.target.dataset.csv){const r=['Họ tên,Cấp,Bộ phận,Trạng thái,Giờ vào'].concat(people.map(p=>[p.name,p.role,rn(p),ST[p.st],p.inAt].join(',')));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+r.join('\n')],{type:'text/csv'}));a.download='chuyen-can-'+new Date().toISOString().slice(0,10)+'.csv';a.click()}};
 function applyRole(){const m=prof&&prof.level==='ql';['tabMgr','tabTl'].forEach(i=>$('#'+i).style.display=m?'':'none');$('#bLogout').style.display=prof?'':'none'}
