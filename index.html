@@ -27,7 +27,7 @@ h1+p{font-size:11px;color:var(--mu);margin-top:2px;line-height:1.35}
 .kpi small{font-size:10px;color:var(--mu);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kpi b{font-size:20px;line-height:1.25;display:block}.kpi.g{border-color:#34d39988}.kpi.y{border-color:#fbbf2488}.kpi.c{border-color:#22d3ee88}
 .clk{grid-column:1/-1;border-color:#a78bfa88;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 12px}
 .clk b{font-size:19px;font-variant-numeric:tabular-nums;letter-spacing:.5px}.clk small{display:block;white-space:normal}
-#geo{margin:6px 0 8px;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.45;border:1px solid;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+#geo{margin:4px 0 12px;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.45;border:1px solid;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 #geo span{flex:1 1 220px;min-width:0}
 #geo button,.btn{background:linear-gradient(90deg,#22d3ee,#d946ef);border:0;color:#fff;font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;padding:8px 14px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:opacity .2s,transform .15s,box-shadow .2s}
 #geo button:hover,.btn:hover{opacity:.92;box-shadow:0 0 14px #22d3ee55}
@@ -42,7 +42,7 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 .chips button{white-space:nowrap;flex:0 0 auto;background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:7px 12px;font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;cursor:pointer;transition:border-color .2s,background .2s}
 .chips button:hover{border-color:var(--cy)}
 .chips button.on{background:linear-gradient(90deg,#22d3ee,#60a5fa);color:#06122e;border:0}
-.grid{display:grid;gap:12px;grid-template-columns:1fr;padding-bottom:24px;margin-top:4px}
+.grid{display:grid;gap:12px;grid-template-columns:1fr;padding-bottom:24px;margin-top:0}
 .cd{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:14px;backdrop-filter:blur(8px);min-width:0;transition:border-color .2s}
 .cd h3{font-size:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.cd h3 span{color:var(--cy);font-size:12px;margin-left:auto}
 .row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:12px;min-width:0}.row>div{min-width:0}.row small{color:var(--mu);display:block;font-size:11px}
@@ -53,7 +53,8 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 .don div{width:84px;height:84px;border-radius:50%;background:#0d1040;display:grid;place-items:center;text-align:center;font-size:10px;color:var(--mu)}.don b{font-size:22px;color:#fff;display:block}
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}
 .view{display:none}.view.on{display:block}
-.zg{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:12px}
+.zg{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.view.on{margin-bottom:12px}#v3d .chips{padding-bottom:0}#mebar{margin:0 0 12px!important}
 .empty{color:var(--mu);font-size:12px;display:block;padding:4px 0}
 #attD{background:#070b24;border:1px solid var(--line);color:#fff;border-radius:9px;padding:6px 10px;font:14px 'Be Vietnam Pro',system-ui,sans-serif;color-scheme:dark}
 .tb{width:100%;border-collapse:collapse;font-size:12px;min-width:680px}
@@ -143,7 +144,7 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 </div>
 <div class="view" id="vmap"><div class="zg" id="zg"></div></div>
 <div class="view" id="vmgr"><div class="cd" id="mg"></div>
- <div class="cd" id="attc" style="margin:12px 0"><h3>Bảng chấm công</h3><div class="rb"><input type="date" id="attD"><button class="btn" id="attL">Xem</button><button class="btn" id="attX">Xuất CSV</button></div><div id="attB" style="margin-top:10px;overflow-x:auto"></div></div></div>
+ <div class="cd" id="attc" style="margin-top:12px"><h3>Bảng chấm công</h3><div class="rb"><input type="date" id="attD"><button class="btn" id="attL">Xem</button><button class="btn" id="attX">Xuất CSV</button></div><div id="attB" style="margin-top:10px;overflow-x:auto"></div></div></div>
 <div class="view" id="vtl"><div class="cd" id="tl"></div></div>
 <div class="grid">
  <div class="cd"><h3>Cán bộ đang có mặt <span id="pc"></span></h3><div id="plist"></div></div>
@@ -305,7 +306,7 @@ function render(){
  renderMgr();renderMe();$('#tl').innerHTML='<h3>Dòng thời gian hôm nay</h3>'+(acts.map(a=>`<div class="row"><b style="color:var(--cy)">${a.t}</b><div>${a.tx}<small>${a.z}</small></div></div>`).join('')||'<small class="empty">Chưa có hoạt động nào hôm nay</small>')}
 function renderMgr(){if(!prof||prof.level!=='ql')return;
  $('#mg').innerHTML='<h3>Quản lý · danh sách hôm nay</h3>'+(people.map(p=>`<div class="row" style="flex-wrap:wrap"><div class="av" style="background:${p.L.shirt}">${p.name.split(' ').pop()[0]}</div><div><b>${p.level==='ql'?'★ ':''}${p.name}</b><small>${p.role} · ${rn(p)} · vào ${p.inAt||'-'}</small></div><span class="tag" style="color:${STC[p.st]}">${ST[p.st]}</span>${present(p)?`<button class="btn" data-out="${p.id}">Cho ra về</button>`:''}</div>`).join('')||'<small class="empty">Chưa có ai kết nối</small>')+'<div class="row"><button class="btn" data-csv="1">Xuất CSV hôm nay</button></div>'}
-$('#mg').onclick=e=>{const o=e.target.dataset.out;if(o){const p=people.find(x=>x.id===o);if(p){p.st='out';if(online&&!p.me)db.ref('presence/'+p.id).update({status:'out',lastSeen:TS()}).catch(()=>alert('Không đủ quyền: hãy thêm UID của bạn vào mục admins trong Firebase.'));acts.unshift({t:hhmm(),tx:p.name+' được quản lý cho ra về',z:rn(p)});render()}}
+$('#mg').onclick=e=>{const o=e.target.dataset.out;if(o){const p=people.find(x=>x.id===o);if(p){p.st='out';if(online&&!p.me){const ids=Object.keys(lastSnap).filter(id=>id===p.id||(p.key&&accKey(lastSnap[id])===p.key));ids.forEach(id=>db.ref('presence/'+id).update({status:'out',lastSeen:TS()}).catch(()=>alert('Không đủ quyền: hãy thêm UID của bạn vào mục admins trong Firebase.')))}acts.unshift({t:hhmm(),tx:p.name+' được quản lý cho ra về',z:rn(p)});render()}}
  if(e.target.dataset.csv){const r=['Họ tên,Cấp,Bộ phận,Trạng thái,Giờ vào'].concat(people.map(p=>[p.name,p.role,rn(p),ST[p.st],p.inAt].join(',')));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+r.join('\n')],{type:'text/csv'}));a.download='chuyen-can-'+new Date().toISOString().slice(0,10)+'.csv';a.click()}};
 function applyRole(){const m=prof&&prof.level==='ql';['tabMgr','tabTl'].forEach(i=>$('#'+i).style.display=m?'':'none');$('#bLogout').style.display=prof?'':'none'}
 $('#bLogout').onclick=()=>{const lk=dlock();if(!confirm(lk?'Hôm nay thiết bị này đã chấm công cho '+(lk.n||lk.u)+'.\nSau khi thoát, máy này chỉ đăng nhập lại được đúng tài khoản đó trong hôm nay.\n\nVẫn đổi tài khoản?':'Đổi tài khoản?'))return;localStorage.removeItem('ptv_profile');location.reload()};
@@ -392,19 +393,28 @@ const sod=t=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime()};
 const isStale=(last,away,now)=>now-last>(away?14400000:CFG.staleMs)||last<sod(now);
 /* Nhận dữ liệu của mọi người: tạo/cập nhật/xóa nhân vật tương ứng */
 const actTxt=(was,st,p)=>(st==='in'||st==='late')?((was==='lunch'||was==='away')?'đã kết nối lại':'vừa check-in'):st==='lunch'?'đi nghỉ trưa':st==='away'?'xin ra ngoài'+(p.note?': '+p.note:''):'đã ra về';
-function syncRemote(snap){const v=snap.val()||{},now=Date.now()+offset;
- Object.keys(v).forEach(id=>{if(id===uid)return;const r=v[id],lv=r.level==='ql'?'ql':'nv',last=r.lastSeen||0,away=r.status==='lunch'||r.status==='away';
+/* Cùng 1 tài khoản có thể có nhiều bản ghi presence (mỗi thiết bị/trình duyệt 1 uid ẩn danh) → gộp theo tài khoản, chỉ giữ 1 nhân vật */
+const accKey=r=>r.user?'u:'+String(r.user).toLowerCase():'n:'+String(r.name||'').trim();
+const myKey=()=>prof?'u:'+String(prof.user||prof.id).toLowerCase():'';
+let lastSnap={};
+function syncRemote(snap){const v=snap.val()||{},now=Date.now()+offset;lastSnap=v;
+ const pick={};Object.keys(v).forEach(id=>{if(id===uid)return;const r=v[id],k=accKey(r);
+  if(prof&&(k===myKey()||(!r.user&&r.name===prof.name)))return;/* chính mình đăng nhập ở thiết bị/tab khác */
+  const last=r.lastSeen||0,live=r.status!=='out'&&!isStale(last,r.status==='lunch'||r.status==='away',now),sc=(live?1e15:0)+last;
+  if(!pick[k]||sc>pick[k].sc)pick[k]={id,sc}});
+ const ids=new Set(Object.values(pick).map(x=>x.id));
+ Object.entries(pick).forEach(([k,{id}])=>{const r=v[id],lv=r.level==='ql'?'ql':'nv',last=r.lastSeen||0,away=r.status==='lunch'||r.status==='away';
   const st=(r.status==='out'||isStale(last,away,now))?'out':(r.status||'in'),room=(ZN[r.zone]&&(lv==='ql'||r.zone!=='ql'))?r.zone:(lv==='ql'?'ql':'ngoai');
-  let p=people.find(x=>x.id===id);
-  if(!p){p=mk(id,r.name||'Ẩn danh',lv,lv,st,r.checkInAt||'',[6,6.8,0]);p.room=room;p.note=r.note||'';people.push(p);if(present(p)){enterOffice(p,rtFirst);if(!rtFirst)acts.unshift({t:hhmm(),tx:p.name+' vừa check-in',z:rn(p)})}}
-  else{const was=p.st;p.note=r.note||'';p.inAt=r.checkInAt||p.inAt;p.st=st;
+  let p=people.find(x=>x.id===id)||people.find(x=>!x.me&&x.key===k&&!ids.has(x.id));if(p)p.id=id;/* chuyển thiết bị → giữ nguyên nhân vật cũ */
+  if(!p){p=mk(id,r.name||'Ẩn danh',lv,lv,st,r.checkInAt||'',[6,6.8,0]);p.key=k;p.room=room;p.note=r.note||'';people.push(p);if(present(p)){enterOffice(p,rtFirst);if(!rtFirst)acts.unshift({t:hhmm(),tx:p.name+' vừa check-in',z:rn(p)})}}
+  else{const was=p.st;p.key=k;p.note=r.note||'';p.inAt=r.checkInAt||p.inAt;p.st=st;
    if(!present({st:was})&&present(p)){p.room=room;enterOffice(p)}else if(present(p)&&room!==p.room){p.room=room;moveTo(p)}
    if(was!==st)acts.unshift({t:hhmm(),tx:p.name+' '+actTxt(was,st,p),z:rn(p)})}
   p.last=last});
- for(let i=people.length-1;i>=0;i--)if(!people[i].me&&!v[people[i].id])people.splice(i,1);
+ for(let i=people.length-1;i>=0;i--)if(!people[i].me&&!ids.has(people[i].id))people.splice(i,1);
  rtFirst=false;rebuildShort();render()}
 function rtPut(){if(!online||!me)return;const r=db.ref('presence/'+uid);
- r.set({name:me.name,level:me.level,status:me.st,zone:me.room,note:me.note||null,checkInAt:me.inAt,lastSeen:TS()});
+ r.set({name:me.name,user:prof&&prof.user?String(prof.user).toLowerCase():null,level:me.level,status:me.st,zone:me.room,note:me.note||null,checkInAt:me.inAt,lastSeen:TS()});
  r.onDisconnect().cancel();/* KHÔNG tự "ra về" khi mất kết nối: trình duyệt đóng băng tab nền cũng làm đứt kết nối */
  db.ref('history/'+day()+'/'+uid+'/in').transaction(x=>x||me.inAt)}
 function rtUp(o){if(online&&uid)db.ref('presence/'+uid).update(Object.assign({lastSeen:TS()},o))}
