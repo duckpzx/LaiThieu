@@ -306,7 +306,7 @@ function render(){
  renderMgr();renderMe();$('#tl').innerHTML='<h3>Dòng thời gian hôm nay</h3>'+(acts.map(a=>`<div class="row"><b style="color:var(--cy)">${a.t}</b><div>${a.tx}<small>${a.z}</small></div></div>`).join('')||'<small class="empty">Chưa có hoạt động nào hôm nay</small>')}
 function renderMgr(){if(!prof||prof.level!=='ql')return;
  $('#mg').innerHTML='<h3>Quản lý · danh sách hôm nay</h3>'+(people.map(p=>`<div class="row" style="flex-wrap:wrap"><div class="av" style="background:${p.L.shirt}">${p.name.split(' ').pop()[0]}</div><div><b>${p.level==='ql'?'★ ':''}${p.name}</b><small>${p.role} · ${rn(p)} · vào ${p.inAt||'-'}</small></div><span class="tag" style="color:${STC[p.st]}">${ST[p.st]}</span>${present(p)?`<button class="btn" data-out="${p.id}">Cho ra về</button>`:''}</div>`).join('')||'<small class="empty">Chưa có ai kết nối</small>')+'<div class="row"><button class="btn" data-csv="1">Xuất CSV hôm nay</button></div>'}
-$('#mg').onclick=e=>{const o=e.target.dataset.out;if(o){const p=people.find(x=>x.id===o);if(p){p.st='out';if(online&&!p.me){const ids=Object.keys(lastSnap).filter(id=>id===p.id||(p.key&&accKey(lastSnap[id])===p.key));ids.forEach(id=>db.ref('presence/'+id).update({status:'out',lastSeen:TS()}).catch(()=>alert('Không đủ quyền: hãy thêm UID của bạn vào mục admins trong Firebase.')))}acts.unshift({t:hhmm(),tx:p.name+' được quản lý cho ra về',z:rn(p)});render()}}
+$('#mg').onclick=e=>{const o=e.target.dataset.out;if(o){const p=people.find(x=>x.id===o);if(p){p.st='out';if(online&&!p.me){const ids=Object.keys(lastSnap).filter(id=>id===p.id||(p.key&&keyOf(lastSnap[id])===p.key));ids.forEach(id=>db.ref('presence/'+id).update({status:'out',lastSeen:TS()}).catch(()=>alert('Không đủ quyền: hãy thêm UID của bạn vào mục admins trong Firebase.')))}acts.unshift({t:hhmm(),tx:p.name+' được quản lý cho ra về',z:rn(p)});render()}}
  if(e.target.dataset.csv){const r=['Họ tên,Cấp,Bộ phận,Trạng thái,Giờ vào'].concat(people.map(p=>[p.name,p.role,rn(p),ST[p.st],p.inAt].join(',')));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+r.join('\n')],{type:'text/csv'}));a.download='chuyen-can-'+new Date().toISOString().slice(0,10)+'.csv';a.click()}};
 function applyRole(){const m=prof&&prof.level==='ql';['tabMgr','tabTl'].forEach(i=>$('#'+i).style.display=m?'':'none');$('#bLogout').style.display=prof?'':'none'}
 $('#bLogout').onclick=()=>{const lk=dlock();if(!confirm(lk?'Hôm nay thiết bị này đã chấm công cho '+(lk.n||lk.u)+'.\nSau khi thoát, máy này chỉ đăng nhập lại được đúng tài khoản đó trong hôm nay.\n\nVẫn đổi tài khoản?':'Đổi tài khoản?'))return;localStorage.removeItem('ptv_profile');location.reload()};
@@ -396,9 +396,13 @@ const actTxt=(was,st,p)=>(st==='in'||st==='late')?((was==='lunch'||was==='away')
 /* Cùng 1 tài khoản có thể có nhiều bản ghi presence (mỗi thiết bị/trình duyệt 1 uid ẩn danh) → gộp theo tài khoản, chỉ giữ 1 nhân vật */
 const accKey=r=>r.user?'u:'+String(r.user).toLowerCase():'n:'+String(r.name||'').trim();
 const myKey=()=>prof?'u:'+String(prof.user||prof.id).toLowerCase():'';
-let lastSnap={};
+let lastSnap={},keyOf=accKey;
 function syncRemote(snap){const v=snap.val()||{},now=Date.now()+offset;lastSnap=v;
- const pick={};Object.keys(v).forEach(id=>{if(id===uid)return;const r=v[id],k=accKey(r);
+ /* Bản ghi cũ (chưa có user) được nối với tài khoản qua họ tên → không còn tách thành 2 nhân vật */
+ const alias={};Object.values(v).forEach(r=>{if(r&&r.user)alias['n:'+String(r.name||'').trim()]='u:'+String(r.user).toLowerCase()});
+ if(prof&&prof.user)alias['n:'+String(prof.name||'').trim()]=myKey();
+ keyOf=r=>{const k=accKey(r||{});return alias[k]||k};
+ const pick={};Object.keys(v).forEach(id=>{if(id===uid)return;const r=v[id],k=keyOf(r);
   if(prof&&(k===myKey()||(!r.user&&r.name===prof.name)))return;/* chính mình đăng nhập ở thiết bị/tab khác */
   const last=r.lastSeen||0,live=r.status!=='out'&&!isStale(last,r.status==='lunch'||r.status==='away',now),sc=(live?1e15:0)+last;
   if(!pick[k]||sc>pick[k].sc)pick[k]={id,sc}});
